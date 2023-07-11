@@ -21,6 +21,42 @@ Each order must have timestamps: The creation and last update timestamps for the
 
 const orderSchema = new Schema({
   //Write your code here
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  products: [
+    {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+      quantity: { type: Number, default: 0 }
+    }
+  ],
+  totalPrice: {
+    type: Number,
+    required: true,
+    default: 0,
+    validate: {
+      validator: function (value) {
+        return value >= 0;
+      },
+      message: 'Total price must be positive number.'
+    }
+  },
+  status: {
+    type: String,
+    default: 'pending',
+    enum: ['pending', 'paid', 'shipped', 'delivered']
+  },
+  shippingAddress: {
+    type: String,
+    required: true
+  },
+  paymentMethod: {
+    type: String,
+    required: true,
+    enum: ['cash', 'credit card', 'debit card', 'upi']
+  }
 }, { timestamps: true });
 
 const Order = mongoose.model('Order', orderSchema);

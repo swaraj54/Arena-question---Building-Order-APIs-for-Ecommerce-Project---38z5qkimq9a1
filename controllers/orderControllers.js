@@ -44,6 +44,51 @@ const placeOrder = async (req, res) => {
 
     try {
         //Write your code here
+
+        const order = new Order({
+            user: userId,
+            products: products.map((product) => (
+                {
+                    product: product.product,
+                    quantity: product.quantity
+                }
+            )),
+            shippingAddress: shippingAddress,
+            paymentMethod
+        });
+
+        const productIds = products.map((product) => product.product);
+
+        const productDocs = await Product.find({ _id: { $in: productIds } });
+        let totalPrice = 0;
+
+        products.forEach((product) => {
+            const foundProduct = productDocs.find((doc) => doc._id.toString() === product.product)
+            if (foundProduct) {
+                console.log(foundProduct, "- foundProduct")
+                totalPrice += foundProduct.price * product.quantity
+            }
+        });
+
+        console.log(totalPrice, "- totalprice")
+
+        order.totalPrice = totalPrice;
+
+        await order.save();
+
+        // const cartres = await Cart.find({ user: userId })
+        // console.log(cartres, "- check")
+
+        await Cart.findOneAndUpdate({ user: userId }, { $pull: { products: { product: { $in: productIds } } } })
+
+        return res.status(200).json({
+            message: "Order placed successfully",
+            status: 'Success',
+            order
+        })
+
+
+
     } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -74,7 +119,7 @@ const showAllOrders = async (req, res) => {
 module.exports = { placeOrder, showAllOrders }
 
 /*
-Input: 
+Input:
 {
   "userId": "614f3a3e86c7b0f9b8f0fde1",
   "products": [
@@ -92,31 +137,30 @@ Input:
 }
 */
 
-/*
-Output: 
-{
-    "message": "Order placed successfully",
-    "status": "Success",
-    "order": {
-        "totalPrice": 4497,
-        "status": "pending",
-        "_id": "640ed9f8685a0739ddc1c74a",
-        "user": "640ed1cab8f0599317a7b79a",
-        "products": [
-            {
-                "quantity": 2,
-                "_id": "640ed9f8685a0739ddc1c74b"
-            },
-            {
-                "quantity": 1,
-                "_id": "640ed9f8685a0739ddc1c74c"
-            }
-        ],
-        "shippingAddress": "123 Main St",
-        "paymentMethod": "credit card",
-        "createdAt": "2023-03-13T08:08:30.959Z",
-        "updatedAt": "2023-03-13T08:08:30.959Z",
-        "__v": 0
-    }
-}
-*/
+
+// Output:
+// {
+//     "message": "Order placed successfully",
+//     "status": "Success",
+//     "order": {
+//         "totalPrice": 4497,
+//         "status": "pending",
+//         "_id": "640ed9f8685a0739ddc1c74a",
+//         "user": "640ed1cab8f0599317a7b79a",
+//         "products": [
+//             {
+//                 "quantity": 2,
+//                 "_id": "640ed9f8685a0739ddc1c74b"
+//             },
+//             {
+//                 "quantity": 1,
+//                 "_id": "640ed9f8685a0739ddc1c74c"
+//             }
+//         ],
+//         "shippingAddress": "123 Main St",
+//         "paymentMethod": "credit card",
+//         "createdAt": "2023-03-13T08:08:30.959Z",
+//         "updatedAt": "2023-03-13T08:08:30.959Z",
+//         "__v": 0
+//     }
+// }
